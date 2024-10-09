@@ -4,9 +4,11 @@ import Image from "next/image";
 import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import User from "./models/user";
+import axios from "axios";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
-
+  const router = useRouter();
   const imgInput = useRef<HTMLInputElement | null>();
   const [file, setFile] = useState<File | null>();
   const [imagePreview, setImagePreview] = useState<string>("");
@@ -34,23 +36,25 @@ export default function Home() {
     setImagePreview('');
   }
 
-  const onProcessForm = (dataForm: User) => {
+  const onProcessForm = async (dataForm: User) => {
     if (!file) {alert("Add picture"); return;};
     const formData = new FormData();
-    formData.set('file', file);
-    formData.set('first_name', dataForm.first_name);
-    formData.set('last_name', dataForm.last_name);
-    formData.set('age', Number(dataForm.age).toString());
-    formData.set('email',dataForm.email);
-    formData.set('password', dataForm.password);
+    formData.append('profilePic', file);
+    formData.append('first_name', dataForm.first_name);
+    formData.append('last_name', dataForm.last_name);
+    formData.append('age', Number(dataForm.age).toString());
+    formData.append('email',dataForm.email);
+    formData.append('password', dataForm.password);
 
-    fetch('http://localhost:8000/auth/register', {body: formData, method: 'POST', headers: {'Content-type': 'multi-part/form-data'}}).then(response => {
-      console.log(response);
-    }).catch(error => {
-      alert(error);
-      console.log(error);
-    })
-
+    const response = await axios.post('http://localhost:8000/auth/register', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    const {data} = response;
+    if (data.ok && data.user) {
+      router.push('/posts');
+    }
   }
 
   return (
